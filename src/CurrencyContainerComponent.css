@@ -1,0 +1,19 @@
+.app-wrapper {
+	display: flex;
+	margin: 20px;
+}
+
+.currency-wrapper {
+	order: 1;
+	margin: 0 20px;
+}
+
+.calculator-wrapper {
+	order: 2;
+}
+
+.display-wrapper {
+	padding: 10px 0;
+	border: 1px solid gray;
+}
+
