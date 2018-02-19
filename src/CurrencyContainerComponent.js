@@ -17,6 +17,36 @@ export default class CurrencyContainerComponent extends React.Component {
 
   componentDidMount() {
     this.fetchRatesForSymbols()
+    this.fetchUserCurrencies()
+  }
+
+  async fetchUserCurrencies() {
+    const passCookies = {credentials: 'same-origin'}
+    const {id} = await (await fetch('/user-info', passCookies)).json()
+    const {currencies = []} = await (await fetch(`/user/data/${id}`, passCookies)).json()
+    console.log('currencies:', currencies)
+    await this.setState(
+      state => ({rates: [...this.state.rates, mergeCurrencies(currencies)]}),
+      () => {
+        // console.log('rates:', this.state.rates)
+        // mergeCurrencies(state.rates, currencies)
+      },
+    )
+  }
+
+  async currenciesUpdate() {
+    const passCookies = {credentials: 'same-origin'}
+    const {id} = await (await fetch('/user-info', passCookies)).json()
+    const currencies = await this.state.rates
+
+    await fetch(`/user/data/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({currencies}),
+      headers: {
+        'content-type': 'application/json',
+      },
+      credentials: 'same-origin',
+    })
   }
 
   async fetchRatesForSymbols() {
@@ -25,7 +55,14 @@ export default class CurrencyContainerComponent extends React.Component {
       baseCurrencySymbol: 'USD',
     })
 
-    this.setState(rates => ({rates: newRates}))
+    console.log('newRates:', newRates)
+
+    await this.setState(
+      rates => ({rates: newRates}),
+      () => {
+        console.log('after fetched rates:', this.state.rates)
+      },
+    )
   }
 
   async nextCalculatorState(input) {
@@ -43,9 +80,12 @@ export default class CurrencyContainerComponent extends React.Component {
       state => ({
         rates: state.rates.find(({symbol}) => symbol === symbolToAdd)
           ? state.rates
-          : Array.from(new Set(state.rates.concat([{symbol: symbolToAdd}]))),
+          : [...state.rates, {symbol: symbolToAdd}],
       }),
-      () => this.fetchRatesForSymbols(),
+      () => {
+        this.fetchRatesForSymbols()
+        this.currenciesUpdate()
+      },
     )
   }
 
@@ -80,4 +120,12 @@ export default class CurrencyContainerComponent extends React.Component {
       </div>
     )
   }
+}
+// function mergeCurrencies(newCurrencies) {
+//   console.log('new currencies from mergCurrencies:', newCurrencies)
+//   return {symbol: 'ILS', rate: 3.4325}
+// }
+
+function mergeCurrencies(rates, newCurrencies) {
+  return newCurrencies.map(currency => ({symbol: currency}))
 }
