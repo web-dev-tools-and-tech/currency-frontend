@@ -16,7 +16,6 @@ export default class CurrencyContainerComponent extends React.Component {
   }
 
   componentDidMount() {
-    this.fetchRatesForSymbols()
     this.fetchUserCurrencies()
   }
 
@@ -24,12 +23,11 @@ export default class CurrencyContainerComponent extends React.Component {
     const passCookies = {credentials: 'same-origin'}
     const {id} = await (await fetch('/user-info', passCookies)).json()
     const {currencies = []} = await (await fetch(`/user/data/${id}`, passCookies)).json()
-    console.log('currencies:', currencies)
-    await this.setState(
-      state => ({rates: [...this.state.rates, mergeCurrencies(currencies)]}),
+    console.log('currencies read:', currencies)
+    this.setState(
+      state => ({rates: [...state.rates, ...mergeCurrencies(state.rates, currencies)]}),
       () => {
-        // console.log('rates:', this.state.rates)
-        // mergeCurrencies(state.rates, currencies)
+        this.fetchRatesForSymbols()
       },
     )
   }
@@ -37,7 +35,8 @@ export default class CurrencyContainerComponent extends React.Component {
   async currenciesUpdate() {
     const passCookies = {credentials: 'same-origin'}
     const {id} = await (await fetch('/user-info', passCookies)).json()
-    const currencies = await this.state.rates
+    const currencies = this.state.rates.map(({symbol}) => symbol)
+    console.log('currencies to write', currencies)
 
     await fetch(`/user/data/${id}`, {
       method: 'PUT',
